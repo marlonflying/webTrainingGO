@@ -19,6 +19,7 @@ func handleConn(conn net.Conn) {
 		fmt.Println("Error reading:", err.Error())
 	}
 	fmt.Print("Message Recieved from the client: ", string(message))
+	conn.Write([]byte(message + "\n"))
 	conn.Close()
 }
 
