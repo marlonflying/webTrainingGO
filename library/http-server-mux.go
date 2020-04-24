@@ -14,7 +14,7 @@ const (
 )
 
 func helloWorld(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "Hello World")
+	io.WriteString(w, "Eyyy careloco!!!")
 }
 
 func main() {
