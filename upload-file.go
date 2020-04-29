@@ -15,7 +15,8 @@ const (
 )
 
 func fileHandler(w http.ResponseWriter, r *http.Request) {
-	file, header, err := r.FormFile("file")
+	r.ParseMultipartForm(10 << 20)
+	file, header, err := r.FormFile("myFile")
 	if err != nil {
 		log.Println("Error getting the file from the form! : ", err)
 		return
