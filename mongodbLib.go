@@ -79,11 +79,37 @@ func readDocuments(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(employees)
 }
 
+func updateDocument(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	vals := r.URL.Query()
+	name, ok := vals["name"]
+	if ok {
+		employeeId, err := strconv.Atoi(id)
+		if err != nil {
+			log.Print("error converting string id to int :: ", err)
+			return
+		}
+		log.Print("going to update document in database for id :: ", id)
+		collection := session.DB("mydb").C("employee")
+		var changeInfo *mgo.ChangeInfo
+		changeInfo, err = collection.Upsert(bson.M{"id": employeeId}, &Employee{employeeId, name[0]})
+		if err != nil {
+			log.Print("error updating record in database :: ", err)
+			return
+		}
+		fmt.Fprintf(w, "Number of documents updated in database are :: %d", changeInfo.Updated)
+	} else {
+		fmt.Fprintf(w, "Error updating document in database for id :: %s", id)
+	}
+}
+
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/databases", getDbNames).Methods("GET")
 	router.HandleFunc("/employee/create", createDocument).Methods("POST")
 	router.HandleFunc("/employees", readDocuments).Methods("GET")
+	router.HandleFunc("/employee/update/{id}", updateDocument).Methods("PUT")
 	defer session.Close()
 	err := http.ListenAndServe(connHost+":"+connPort, router)
 	if err != nil {
