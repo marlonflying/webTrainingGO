@@ -104,10 +104,28 @@ func updateDocument(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func deleteDocument(w http.ResponseWriter, r *http.Request) {
+	vals := r.URL.Query()
+	name, ok := vals["name"]
+	if ok {
+		log.Print("going to delete document in database for name :: ", name[0])
+		collection := session.DB("mydb").C("employee")
+		removeErr := collection.Remove(bson.M{"name": name[0]})
+		if removeErr != nil {
+			log.Print("error removing document form database :: ", removeErr)
+			return
+		}
+		fmt.Fprintf(w, "Document with name %s is deleted from database", name[0])
+	} else {
+		fmt.Fprintf(w, "error deleting document in database for name %s", name[0])
+	}
+}
+
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/databases", getDbNames).Methods("GET")
 	router.HandleFunc("/employee/create", createDocument).Methods("POST")
+	router.HandleFunc("/employee/delete", deleteDocument).Methods("DELETE")
 	router.HandleFunc("/employees", readDocuments).Methods("GET")
 	router.HandleFunc("/employee/update/{id}", updateDocument).Methods("PUT")
 	defer session.Close()
