@@ -74,10 +74,58 @@ func readRecord(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(employees)
 }
 
+func updateRecord(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	vals := r.URL.Query()
+	name, ok := vals["name"]
+	if ok {
+		log.Print("updating record in database for id :: ", id)
+		stmt, err := db.Prepare("UPDATE employee SET name=? where uid=?")
+		if err != nil {
+			log.Print("error preparing query :: ", err)
+			return
+		}
+		result, err := stmt.Exec(name[0], id)
+		if err != nil {
+			log.Print("error executing query :: ", err)
+			return
+		}
+		rowsAffected, err := result.RowsAffected()
+		fmt.Fprintf(w, "Number of rows updated :: %d", rowsAffected)
+	} else {
+		fmt.Fprintf(w, "Error updating record in database for id :: %s", id)
+	}
+}
+
+func deleteRecord(w http.ResponseWriter, r *http.Request) {
+	vals := r.URL.Query()
+	name, ok := vals["name"]
+	if ok {
+		log.Print("deleting record in database for name :: ", name[0])
+		stmt, err := db.Prepare("DELETE from employee where name=?")
+		if err != nil {
+			log.Print("error preparing query :: ", err)
+			return
+		}
+		result, err := stmt.Exec(name[0])
+		if err != nil {
+			log.Print("error executing query :: ", err)
+			return
+		}
+		rowsAffected, err := result.RowsAffected()
+		fmt.Fprintf(w, "Number of rows deleted in database are :: %d", rowsAffected)
+	} else {
+		fmt.Fprintf(w, "Error deleting record in database for name %s", name[0])
+	}
+}
+
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/employee/create", createRecord).Methods("POST")
 	router.HandleFunc("/employees", readRecord).Methods("GET")
+	router.HandleFunc("/employee/update/{id}", updateRecord).Methods("PUT")
+	router.HandleFunc("/employee/delete", deleteRecord).Methods("DELETE")
 	defer db.Close()
 	err := http.ListenAndServe(connHost+":"+connPort, router)
 	if err != nil {
